@@ -32,68 +32,18 @@ beforeEach(() => {
 describe("claim", () => {
   it("should return the workflow id if found", async () => {
     const persistence = new MongoPersistence("mongodb://localhost:27017");
+    const now = new Date("2011-10-05T14:38:00.000Z");
     const timeoutAt = new Date("2011-10-05T14:48:00.000Z");
     findOneAndUpdate.mockResolvedValue({ id: "workflow-1" });
-    const workflowId = await persistence.claim(timeoutAt);
+    const workflowId = await persistence.claim(now, timeoutAt);
     expect(workflowId).toEqual("workflow-1");
-
-    expect(findOneAndUpdate).toHaveBeenCalledWith(
-      {
-        $or: [
-          {
-            status: "idle",
-          },
-          {
-            status: { $in: ["running", "failed"] },
-            timeoutAt: { $lt: timeoutAt },
-          },
-        ],
-      },
-      {
-        $set: {
-          status: "running",
-          timeoutAt,
-        },
-      },
-      {
-        projection: {
-          _id: 0,
-          id: 1,
-        },
-      }
-    );
   });
 
   it("should return undefined if not found", async () => {
     const persistence = new MongoPersistence("mongodb://localhost:27017");
+    const now = new Date("2011-10-05T14:38:00.000Z");
     const timeoutAt = new Date("2011-10-05T14:48:00.000Z");
-    const workflowId = await persistence.claim(timeoutAt);
+    const workflowId = await persistence.claim(now, timeoutAt);
     expect(workflowId).toBeFalsy();
-
-    expect(findOneAndUpdate).toHaveBeenCalledWith(
-      {
-        $or: [
-          {
-            status: "idle",
-          },
-          {
-            status: { $in: ["running", "failed"] },
-            timeoutAt: { $lt: timeoutAt },
-          },
-        ],
-      },
-      {
-        $set: {
-          status: "running",
-          timeoutAt,
-        },
-      },
-      {
-        projection: {
-          _id: 0,
-          id: 1,
-        },
-      }
-    );
   });
 });

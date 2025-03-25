@@ -57,7 +57,7 @@ export class MongoPersistence {
     }
   }
 
-  async claim(timeoutAt: Date): Promise<string | undefined> {
+  async claim(now: Date, timeoutAt: Date): Promise<string | undefined> {
     const workflow = await this.workflows.findOneAndUpdate(
       {
         $or: [
@@ -66,7 +66,7 @@ export class MongoPersistence {
           },
           {
             status: { $in: ["running", "failed"] },
-            timeoutAt: { $lt: timeoutAt },
+            timeoutAt: { $lt: now },
           },
         ],
       },
