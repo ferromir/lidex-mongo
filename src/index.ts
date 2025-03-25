@@ -2,12 +2,6 @@ import { Collection, MongoClient } from "mongodb";
 
 type Status = "idle" | "running" | "failed" | "finished" | "aborted";
 
-interface RunData {
-  handler: string;
-  input: unknown;
-  failures?: number;
-}
-
 interface Workflow {
   id: string;
   handler: string;
@@ -19,6 +13,8 @@ interface Workflow {
   steps?: { [key: string]: unknown };
   naps?: { [key: string]: Date };
 }
+
+type RunData = Pick<Workflow, "handler" | "input" | "failures">;
 
 export class MongoPersistence {
   readonly workflows: Collection<Workflow>;
