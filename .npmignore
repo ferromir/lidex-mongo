@@ -1,8 +1,10 @@
 .github
-coverage
-src
+coverage/
+dist/src/index.test.d.ts
+dist/src/index.test.js
+dist/jest.config.d.ts
+dist/jest.config.js
+src/
 .gitignore
-jest.config.js
+jest.config.ts
 tsconfig.json
-index.*.test.js
-index.*.test.d.ts
