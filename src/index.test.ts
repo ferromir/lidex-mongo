@@ -4,6 +4,7 @@ const createIndex = jest.fn();
 const findOneAndUpdate = jest.fn();
 const insertOne = jest.fn();
 const findOne = jest.fn();
+const updateOne = jest.fn();
 const persistence = new MongoPersistence("mongodb://localhost:27017");
 
 jest.mock("mongodb", () => ({
@@ -14,6 +15,7 @@ jest.mock("mongodb", () => ({
         findOneAndUpdate,
         insertOne,
         findOne,
+        updateOne,
       })),
     })),
   })),
@@ -24,6 +26,7 @@ beforeEach(() => {
   findOneAndUpdate.mockReset();
   insertOne.mockReset();
   findOne.mockReset();
+  updateOne.mockReset();
 });
 
 describe("init", () => {
@@ -230,6 +233,164 @@ describe("findWakeUpAt", () => {
         projection: {
           _id: 0,
           "naps.nap-1": 1,
+        },
+      },
+    );
+  });
+});
+
+describe("findRunData", () => {
+  it("returns run data if workflow is found", async () => {
+    findOne.mockResolvedValue({
+      handler: "handler-1",
+      input: "input-1",
+      failures: 1,
+    });
+
+    const data = await persistence.findRunData("workflow-1");
+
+    expect(data).toEqual({
+      handler: "handler-1",
+      input: "input-1",
+      failures: 1,
+    });
+
+    expect(findOne).toHaveBeenCalledWith(
+      {
+        id: "workflow-1",
+      },
+      {
+        projection: {
+          _id: 0,
+          handler: 1,
+          input: 1,
+          failures: 1,
+        },
+      },
+    );
+  });
+
+  it("returns undefined if workflow is not found", async () => {
+    const data = await persistence.findRunData("workflow-1");
+    expect(data).toBeUndefined();
+
+    expect(findOne).toHaveBeenCalledWith(
+      {
+        id: "workflow-1",
+      },
+      {
+        projection: {
+          _id: 0,
+          handler: 1,
+          input: 1,
+          failures: 1,
+        },
+      },
+    );
+  });
+});
+
+describe("setAsFinished", () => {
+  it("updates workflow status", async () => {
+    await persistence.setAsFinished("workflow-1");
+
+    expect(updateOne).toHaveBeenCalledWith(
+      {
+        id: "workflow-1",
+      },
+      {
+        $set: { status: "finished" },
+      },
+    );
+  });
+});
+
+describe("findStatus", () => {
+  it("returns workflow status if found", async () => {
+    findOne.mockResolvedValue({ status: "running" });
+    const status = await persistence.findStatus("workflow-1");
+    expect(status).toEqual("running");
+  });
+
+  it("returns undefined if workflow not found", async () => {
+    const status = await persistence.findStatus("workflow-1");
+    expect(status).toBeUndefined();
+  });
+});
+
+describe("updateStatus", () => {
+  it("updates the workflow", async () => {
+    const timeoutAt = new Date("2011-10-05T14:48:00.000Z");
+
+    await persistence.updateStatus(
+      "workflow-1",
+      "failed",
+      timeoutAt,
+      1,
+      "kapot",
+    );
+
+    expect(updateOne).toHaveBeenCalledWith(
+      {
+        id: "workflow-1",
+      },
+      {
+        $set: {
+          status: "failed",
+          timeoutAt,
+          failures: 1,
+          lastError: "kapot",
+        },
+      },
+    );
+  });
+});
+
+describe("updateOutput", () => {
+  it("updates the workflow", async () => {
+    const timeoutAt = new Date("2011-10-05T14:48:00.000Z");
+
+    await persistence.updateOutput(
+      "workflow-1",
+      "step-1",
+      "output-1",
+      timeoutAt,
+    );
+
+    expect(updateOne).toHaveBeenCalledWith(
+      {
+        id: "workflow-1",
+      },
+      {
+        $set: {
+          ["steps.step-1"]: "output-1",
+          timeoutAt,
+        },
+      },
+    );
+  });
+});
+
+describe("updateWakeUpAt", () => {
+  it("updates the workflow", async () => {
+    const wakeUpAt = new Date("2011-10-05T14:47:00.000Z");
+    const timeoutAt = new Date("2011-10-05T14:48:00.000Z");
+
+    await persistence.updateWakeUpAt(
+      "workflow-1",
+      "nap-1",
+      wakeUpAt,
+      timeoutAt,
+    );
+
+    expect(updateOne).toHaveBeenCalledWith(
+      {
+        id: "workflow-1",
+      },
+      {
+        $set: {
+          ["naps.nap-1"]: wakeUpAt,
+          timeoutAt,
         },
       },
     );
