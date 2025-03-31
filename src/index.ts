@@ -34,7 +34,7 @@ export class MongoPersistence {
   async insert(
     workflowId: string,
     handler: string,
-    input: unknown
+    input: unknown,
   ): Promise<boolean> {
     try {
       await this.workflows.insertOne({
@@ -81,7 +81,7 @@ export class MongoPersistence {
           _id: 0,
           id: 1,
         },
-      }
+      },
     );
 
     return workflow?.id;
@@ -97,7 +97,7 @@ export class MongoPersistence {
           _id: 0,
           [`steps.${stepId}`]: 1,
         },
-      }
+      },
     );
 
     if (workflow && workflow.steps) {
@@ -109,7 +109,7 @@ export class MongoPersistence {
 
   async findWakeUpAt(
     workflowId: string,
-    napId: string
+    napId: string,
   ): Promise<Date | undefined> {
     const workflow = await this.workflows.findOne(
       {
@@ -120,7 +120,7 @@ export class MongoPersistence {
           _id: 0,
           [`naps.${napId}`]: 1,
         },
-      }
+      },
     );
 
     if (workflow && workflow.naps) {
@@ -142,7 +142,7 @@ export class MongoPersistence {
           input: 1,
           failures: 1,
         },
-      }
+      },
     );
 
     if (workflow) {
@@ -159,7 +159,7 @@ export class MongoPersistence {
       },
       {
         $set: { status: "finished" },
-      }
+      },
     );
   }
 
@@ -173,7 +173,7 @@ export class MongoPersistence {
           _id: 0,
           status: 1,
         },
-      }
+      },
     );
 
     return workflow?.status;
@@ -184,7 +184,7 @@ export class MongoPersistence {
     status: Status,
     timeoutAt: Date,
     failures: number,
-    lastError: string
+    lastError: string,
   ): Promise<void> {
     await this.workflows.updateOne(
       {
@@ -197,7 +197,7 @@ export class MongoPersistence {
           failures,
           lastError,
         },
-      }
+      },
     );
   }
 
@@ -205,7 +205,7 @@ export class MongoPersistence {
     workflowId: string,
     stepId: string,
     output: unknown,
-    timeoutAt: Date
+    timeoutAt: Date,
   ): Promise<void> {
     await this.workflows.updateOne(
       {
@@ -216,7 +216,7 @@ export class MongoPersistence {
           [`steps.${stepId}`]: output,
           timeoutAt,
         },
-      }
+      },
     );
   }
 
@@ -224,7 +224,7 @@ export class MongoPersistence {
     workflowId: string,
     napId: string,
     wakeUpAt: Date,
-    timeoutAt: Date
+    timeoutAt: Date,
   ): Promise<void> {
     await this.workflows.updateOne(
       {
@@ -235,7 +235,7 @@ export class MongoPersistence {
           [`naps.${napId}`]: wakeUpAt,
           timeoutAt,
         },
-      }
+      },
     );
   }
 }
