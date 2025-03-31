@@ -4,6 +4,7 @@ const createIndex = jest.fn();
 const findOneAndUpdate = jest.fn();
 const insertOne = jest.fn();
 const findOne = jest.fn();
+const persistence = new MongoPersistence("mongodb://localhost:27017");
 
 jest.mock("mongodb", () => ({
   MongoClient: jest.fn().mockImplementation(() => ({
@@ -27,7 +28,6 @@ beforeEach(() => {
 
 describe("init", () => {
   it("should create the indexes", async () => {
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     await persistence.init();
     expect(createIndex).toHaveBeenNthCalledWith(1, { id: 1 }, { unique: true });
     expect(createIndex).toHaveBeenNthCalledWith(2, { status: 1 });
@@ -37,8 +37,6 @@ describe("init", () => {
 
 describe("insert", () => {
   it("returns true if the workflow is inserted", async () => {
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
-
     const result = await persistence.insert(
       "workflow-1",
       "handler-1",
@@ -59,7 +57,6 @@ describe("insert", () => {
 
   it("returns false if the workflow already exists", async () => {
     insertOne.mockRejectedValue({ name: "MongoServerError", code: 11000 });
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
 
     const result = await persistence.insert(
       "workflow-1",
@@ -81,7 +78,6 @@ describe("insert", () => {
 
   it("fails if insertion fails", async () => {
     insertOne.mockRejectedValue(new Error("kapot"));
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     const result = persistence.insert("workflow-1", "handler-1", "input-1");
     await expect(result).rejects.toThrow("kapot");
 
@@ -99,7 +95,6 @@ describe("insert", () => {
 describe("claim", () => {
   it("should return the workflow id if found", async () => {
     findOneAndUpdate.mockResolvedValue({ id: "workflow-1" });
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     const now = new Date("2011-10-05T14:38:00.000Z");
     const timeoutAt = new Date("2011-10-05T14:48:00.000Z");
     const workflowId = await persistence.claim(now, timeoutAt);
@@ -133,7 +128,6 @@ describe("claim", () => {
   });
 
   it("should return undefined if not found", async () => {
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     const now = new Date("2011-10-05T14:38:00.000Z");
     const timeoutAt = new Date("2011-10-05T14:48:00.000Z");
     const workflowId = await persistence.claim(now, timeoutAt);
@@ -170,7 +164,6 @@ describe("claim", () => {
 describe("findOutput", () => {
   it("returns the output if found", async () => {
     findOne.mockResolvedValue({ steps: { "step-1": "output-1" } });
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     const output = await persistence.findOutput("workflow-1", "step-1");
     expect(output).toEqual("output-1");
 
@@ -188,7 +181,6 @@ describe("findOutput", () => {
   });
 
   it("returns undefined if output is not found", async () => {
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     const output = await persistence.findOutput("workflow-1", "step-1");
     expect(output).toBeUndefined();
 
@@ -210,7 +202,6 @@ describe("findWakeUpAt", () => {
   it("returns the wakeUpAt if found", async () => {
     const wakeUpAt = new Date("2011-10-05T14:38:00.000Z");
     findOne.mockResolvedValue({ naps: { "nap-1": wakeUpAt } });
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     const _wakeUpAt = await persistence.findWakeUpAt("workflow-1", "nap-1");
     expect(_wakeUpAt).toEqual(wakeUpAt);
 
@@ -228,7 +219,6 @@ describe("findWakeUpAt", () => {
   });
 
   it("returns undefined if wakeUpAt is not found", async () => {
-    const persistence = new MongoPersistence("mongodb://localhost:27017");
     const wakeUpAt = await persistence.findWakeUpAt("workflow-1", "nap-1");
     expect(wakeUpAt).toBeUndefined();
 
