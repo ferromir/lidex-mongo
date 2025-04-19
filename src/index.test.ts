@@ -1,11 +1,12 @@
-import { MongoPersistence } from ".";
+import { makeMongoPersistence } from ".";
 
 const createIndex = jest.fn();
 const findOneAndUpdate = jest.fn();
 const insertOne = jest.fn();
 const findOne = jest.fn();
 const updateOne = jest.fn();
-const persistence = new MongoPersistence("mongodb://localhost:27017");
+const close = jest.fn();
+const persistence = makeMongoPersistence("mongodb://localhost:27017");
 
 jest.mock("mongodb", () => ({
   MongoClient: jest.fn().mockImplementation(() => ({
@@ -18,6 +19,7 @@ jest.mock("mongodb", () => ({
         updateOne,
       })),
     })),
+    close,
   })),
 }));
 
@@ -27,6 +29,7 @@ beforeEach(() => {
   insertOne.mockReset();
   findOne.mockReset();
   updateOne.mockReset();
+  close.mockReset();
 });
 
 describe("init", () => {
@@ -394,5 +397,12 @@ describe("updateWakeUpAt", () => {
         },
       },
     );
+  });
+});
+
+describe("terminate", () => {
+  it("should terminate the client", async () => {
+    await persistence.terminate();
+    expect(close).toHaveBeenCalled();
   });
 });
